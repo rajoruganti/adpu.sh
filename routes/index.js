@@ -1,5 +1,6 @@
 var async = require('async');
 var mongo = require('mongodb');
+var path = require('path');
 
 var OAuth= require('oauth').OAuth;
 
@@ -218,10 +219,21 @@ exports.doPromo = function(req,res){
 			}
 			var site = sites[Math.floor(Math.random() * sites.length)];
 			console.log(sites)
-
+			var tplPath = path.join(__dirname, '../public/tpl/');
             var template  = require('swig');
+			template.init({
+			  allowErrors: false,
+			  autoescape: true,
+			  cache: true,
+			  encoding: 'utf8',
+			  filters: {},
+			  root: "",
+			  tags: {},
+			  extensions: {},
+			  tzOffset: 0
+			});
 			
-			var tmpl = template.compileFile('/Users/raj/Projects/pro.mo/public/tpl/promo.html');
+			var tmpl = template.compileFile(tplPath+'promo.html');
 			renderedHTML= tmpl.render({
 			    message: item.message,
 				site: site,
