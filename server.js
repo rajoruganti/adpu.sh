@@ -1,13 +1,15 @@
 #!/bin/env node
 //  OpenShift sample Node application
 var express = require('express');
-var fs      = require('fs');
+var fs      = require('fs'),
+	path = require('path'),
+routes = require('./routes/index');
 
 
 /**
  *  Define the sample application.
  */
-var SampleApp = function() {
+var PromoApp = function() {
 
     //  Scope.
     var self = this;
@@ -132,8 +134,23 @@ var SampleApp = function() {
      */
     self.initializeServer = function() {
         self.createRoutes();
-        self.app = express.createServer();
+        //self.app = express.createServer();
+		self.app=express();
+		self.app.configure(function () {
 
+			    self.app.use(express.logger('dev'));  /* 'default', 'short', 'tiny', 'dev' */
+			    self.app.use(express.bodyParser()),
+			    self.app.use(express.static(path.join(__dirname, 'public')));
+				self.app.use(express.cookieParser());
+				self.app.use(express.session({ secret: "topsecret" }));
+			});
+
+			
+			self.app.get('/fb/:id', routes.fb);
+			self.app.get('/tw/:id', routes.tw);
+			self.app.get('/auth/twitter/callback', routes.twCallback);
+			self.app.get('/do/:id', routes.doPromo);
+			self.app.post('/create', routes.createPromo);
         //  Add handlers for the app (from the routes).
         for (var r in self.routes) {
             self.app.get(r, self.routes[r]);
@@ -172,7 +189,7 @@ var SampleApp = function() {
 /**
  *  main():  Main code.
  */
-var zapp = new SampleApp();
+var zapp = new PromoApp();
 zapp.initialize();
 zapp.start();
 

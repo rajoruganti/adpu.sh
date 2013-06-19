@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>index</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Raj Oruganti">
+	<!-- Date: 2013-06-01 -->
+</head>
+<body>
+	<div id="content">
+		<div class="home-hero">
+		            <h1>Welcome to Doc Repyu</h1>
+		            <h3>A simple way to find a doc</h3>
+
+		    <br/>
+		    <div style="opacity: .9;">
+				<form id="qform" method="get">
+					<input id="q" type="text"/>
+					
+				</form>
+				<div id="results"> <!-- results, written by Ajax -->
+				<h3>Results</h3>
+				<div id="results-list"> 
+					<script type="text/template" id="docsTemplate">
+					    <% _.each(docs, function (doc) { %>
+					    <div class="doc">
+					        <p>@<%= doc.name %></p>
+					        <p class="text"><%= doc.affiliation %></p><p><%= doc.link %></p>
+					    </div>
+					    <% }); %>
+					</script>
+					</div>
+				</div>
+		    </div>
+
+
+		</div>
+		
+	</div>
+
+	<script src="lib/jquery-1.8.2.min.js"></script>
+	<script src="lib/underscore-min.js"></script>
+	<script src="lib/backbone-min.js"></script>
+	<script src="lib/bootstrap.min.js"></script>
+
+
+	
+	
+	<script src="js/main.js"></script>
+</body>
+</html>
