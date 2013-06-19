@@ -3,13 +3,15 @@ var mongo = require('mongodb');
 
 var OAuth= require('oauth').OAuth;
 
+var twCallbackUrl = process.env.DEV_TWITTER_CALLBACK_URL || "http://pro.mo:8080";
+
 var oa = new OAuth(
 	"https://api.twitter.com/oauth/request_token",
 	"https://api.twitter.com/oauth/access_token",
 	"gGwatU5a5uyGIk9DPK15tA",
 	"WnkuSYwFUAvQ8QMxhaWgipXknhg6wnvcELfWsB4v1YY",
 	"1.0",
-	"http://pro.mo:3000/auth/twitter/callback",
+	twCallbackUrl+"/auth/twitter/callback",
 	"HMAC-SHA1"
 );
 
@@ -113,62 +115,82 @@ exports.tw = function(req, res){
 };
 
 exports.twCallback = function(req, res, next){
+	req.setEncoding("utf8");
+	var ip = getClientAddress(req);
 	if (req.session.oauth) {
 		req.session.oauth.verifier = req.query.oauth_verifier;
 		var oauth = req.session.oauth;
 		var cid = req.session.cid;
-		// get message for cid
-		oa.getOAuthAccessToken(oauth.token,oauth.token_secret,oauth.verifier, 
-		function(error, oauth_access_token, oauth_access_token_secret, results){
-			if (error){
-				console.log(error);
-				res.send("yeah something broke.");
-			} else {
-				req.session.oauth.access_token = oauth_access_token;
-				req.session.oauth.access_token_secret = oauth_access_token_secret;
-				console.log(results);
-				// tweet the message
-				req.setEncoding("utf8");
-				var ip = getClientAddress(req);
-				// fetch content corresponding to hash from mongo
-				var id = req.params.id;
-				console.log('Retrieving promo: ' + cid);
-				var message;
-			    db.collection('promo', function(err, collection) {
-			        collection.findOne({'plink':cid}, function(err, item) {
-					if(err){
-						console.log("err");
-					}
-					message = item.message;
-					console.log(message)
-
+		var message,
+			reward;
+		async.series([
+			// get access token from tw
+			function(callback){
+					oa.getOAuthAccessToken(oauth.token,oauth.token_secret,oauth.verifier, 
+					function(error, oauth_access_token, oauth_access_token_secret, results){
+						if (error){
+							console.log(error);
+							res.send("yeah something broke.");
+						} else {
+							req.session.oauth.access_token = oauth_access_token;
+							req.session.oauth.access_token_secret = oauth_access_token_secret;
+							console.log(results);
+							callback();
+						}
+			
 					});
-				});
+			},
+			//fetch the message from mongo
+			function(callback){
+					// fetch content corresponding to hash from mongo
+					//var id = req.params.id;
+					console.log('Retrieving promo: ' + cid);
 
+				    db.collection('promo', function(err, collection) {
+				        collection.findOne({'plink':cid}, function(err, item) {
+						if(err){
+							console.log("err");
+						}
+						message = item.message;
+						reward = item.reward;
+						//console.log(message)
+						callback();
 
-				var Twit = require('twit')
+						});
+					});
+			},
+			//tweet the message
+			function(callback){
+				var Twit = require('twit');
 
 				var twitter = new Twit({
 				    consumer_key:'gGwatU5a5uyGIk9DPK15tA',
 				    consumer_secret:'WnkuSYwFUAvQ8QMxhaWgipXknhg6wnvcELfWsB4v1YY',
-				    access_token:oauth_access_token,
-				    access_token_secret: oauth_access_token_secret
+				    access_token:req.session.oauth.access_token,
+				    access_token_secret: req.session.oauth.access_token_secret
 				});
 				//
 				//  tweet 
 				//
-				twitter.post('statuses/update', { status: 'message'}, function(err, reply) {
+				console.log("sending message:"+message)
+				twitter.post('statuses/update', { status: message}, function(err, reply) {
 					if(err){
 						console.error(err);
 						res.send("failed");
 					}
 					else{
 						console.log("success posting to twitter");
-						res.send("redirecting");
+						callback();
 					}
-				})
+				});
 			}
-		});
+			// redirect the user
+		],function(err,result){
+				//console.log("result:"+result);
+				res.redirect(reward);
+			});
+		
+		
 	} else
 		next(new Error("you're not supposed to be here."))
 };
