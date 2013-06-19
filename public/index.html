@@ -39,7 +39,14 @@
 				<form id="qform" method="post" class="form-search">
 					<div>
 			   	<label for="message">Message that you want to spread<label>
-					<textarea id="message" name="message"></textarea>
+					<div class="span4 well">
+					    <form accept-charset="UTF-8" action="" method="POST">
+					        <textarea class="span4" id="message" name="message"
+					        placeholder="Type in your message" rows="5"></textarea>
+					        <h6 class="pull-right">320 characters remaining</h6>
+					        <button class="btn btn-info" type="submit">Post New Message</button>
+					    </form>
+					</div>
 					</div>
 					<div>
 					<label for="reward">Reward URL</label>
