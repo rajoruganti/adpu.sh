@@ -4,7 +4,7 @@ var path = require('path');
 
 var OAuth= require('oauth').OAuth;
 
-var twCallbackUrl = process.env.DEV_TWITTER_CALLBACK_URL || "http://pro.mo:8080";
+var twCallbackUrl = process.env.TWITTER_CALLBACK_URL || "http://pro.mo:8080";
 
 var oa = new OAuth(
 	"https://api.twitter.com/oauth/request_token",
