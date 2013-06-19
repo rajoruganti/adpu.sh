@@ -31,11 +31,11 @@ MongoDB 2.2 database added.  Please make note of these credentials:
    Database Name: promo
 Connection URL: mongodb://$OPENSHIFT_MONGODB_DB_HOST:$OPENSHIFT_MONGODB_DB_PORT/
 */
-	db = new Db('xtraxt', server);
+	db = new Db('promo', server);
 
 	db.open(function(err, db) {
 	    if(!err) {
-	        console.log("Connected to 'xtraxt' database");
+	        console.log("Connected to 'promo' database");
 			if(process.env.NODE_ENV != "development"){
 				db.admin().authenticate('admin', 'lcRsVDrK7RNg', function(de , db){
 				     if(de){
@@ -98,12 +98,14 @@ exports.fb= function(req, res){
 };
 
 exports.tw = function(req, res){
+	var ip = getClientAddress(req);
 	oa.getOAuthRequestToken(function(error, oauth_token, oauth_token_secret, results){
 		if (error) {
 			console.log(error);
 			res.send("yeah no. didn't work.")
 		}
 		else {
+			req.session.rip = ip;
 			req.session.cid = req.params.id;
 			req.session.oauth = {token: oauth_token};
 			req.session.oauth.token = oauth_token;
@@ -183,6 +185,37 @@ exports.twCallback = function(req, res, next){
 						console.log("success posting to twitter");
 						callback();
 					}
+				});
+			},
+			// save the tweet
+			function(callback){
+				// ip - from session
+				// campaign_id from session
+				// timestamp from current
+				// location from ip
+				// create json to insert into mongodb
+				var now = new Date();
+				var jsonDate = now.toJSON();
+				var xset = [{
+					"ip":req.session.rip,
+					"campaign":req.session.cid,
+					"timestamp":jsonDate,
+					"network":"tw"
+				}];
+				console.log(xset);
+				db.collection('infects', function(err, collection) {
+					collection.insert(xset, {safe:true}, function(err, result) {
+						if(err){
+							console.log("error saving to mongo")
+						}
+						else{
+							console.log("saved request to db:"+result[0]._id);
+							requestId = result[0]._id;
+							console.log("got _id:"+requestId);
+							callback();
+							
+						}
+					});
 				});
 			}
 			// redirect the user

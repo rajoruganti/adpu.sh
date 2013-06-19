@@ -35,35 +35,70 @@
 
 		    <br/>
 		    <div style="opacity: .9;">
-				<div>
+				<div class="offset4 span6 offset4">
 				<form id="qform" method="post" class="form-search">
-					<div>
-			   	<label for="message">Message that you want to spread<label>
-					<div class="span4 well">
-					    <form accept-charset="UTF-8" action="" method="POST">
-					        <textarea class="span4" id="message" name="message"
-					        placeholder="Type in your message" rows="5"></textarea>
-					        <h6 class="pull-right">320 characters remaining</h6>
-					        <button class="btn btn-info" type="submit">Post New Message</button>
-					    </form>
-					</div>
-					</div>
-					<div>
-					<label for="reward">Reward URL</label>
-					<input type="text" id="reward" name="reward"/>
-					</div>
-					<div>
-						<label for="sites">Where do you want to spread your message?</label>
-						<input type="checkbox" name="sites" value="twitter" />Twitter<br />
-						<input type="checkbox" name="sites" value="facebook" />Facebook<br />
+						<fieldset>
 
-					</div>
-					<div>
-						<label for="email">Email</label>
-						<input type="text" name="email" id="email"/>
-					</div>
+						<!-- Form Name -->
+						<legend>Create a promo</legend>
+
+						<!-- Textarea -->
+						<div class="control-group">
+						  <label class="control-label">What message do you want to promote?</label>
+						  <div class="controls">                     
+							<textarea id="message" name="message" maxlength="140" rows="2" placeholder="try to stick to 140 chars."></textarea>
+						  </div>
+						</div>
+
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Reward URL</label>
+						  <div class="controls">
+						    <input id="reward" name="reward" type="text" placeholder="http://google.com" class="input-xlarge" required="">
+						    <p class="help-block">What will your site visitors get in return for posting your message on Social Media networks</p>
+						  </div>
+						</div>
+
+						<!-- Multiple Checkboxes -->
+						<div class="control-group">
+						  <label class="control-label">Where do you want to promote your message?</label>
+						  <div class="controls">
+						    <label class="checkbox">
+						      <input type="checkbox" name="sites" value="twitter">
+						      Twitter
+						    </label>
+						    <label class="checkbox">
+						      <input type="checkbox" name="sites" value="facebook">
+						      Facebook
+						    </label>
+						  </div>
+						</div>
+
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Email</label>
+						  <div class="controls">
+						    <input id="email" name="email" type="text" placeholder="doc@example.com" class="input-xlarge" required="">
+						    <p class="help-block">Track your campaigns</p>
+						  </div>
+						</div>
+
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Campaign Name</label>
+						  <div class="controls">
+						    <input id="campaign" name="campaign" type="text" placeholder="The promotion" class="input-xlarge">
+						    <p class="help-block">Give your campaign a friendly name so you can track it easily later</p>
+						  </div>
+						</div>
+
+						</fieldset>
 					<button type="submit" class="btn">Generate pro.mo link</button>
 				</form>
+				<form class="form-horizontal">
+			
+				</form>
+				
 				</div>
 				
 				
@@ -93,8 +128,16 @@
 	<script src="lib/knockout-2.2.1.js"></script>
 	<script src="lib/bootstrap.min.js"></script>
 	<script src="lib/jquery.blockUI.js"></script>
+	<script src="lib/bootstrap.min.js"></script>
+	<script src="lib/bootstrap-maxlength.min.js"></script>
 	<script type="text/javascript">
-	
+		$(document).ready(function(){
+			console.log("a");
+			$('#message').maxlength({
+			    alwaysShow: true,
+				placement:"right"
+			});
+		});
 		var data = [];   
 		
 		
@@ -117,8 +160,9 @@
 		};
 		var app = new viewModel();
 		ko.applyBindings(app);
-
+		
 		$(function () {
+			
 		    // on this click event, we popular the observable array
 		    $("form").submit(function (e) {
 				e.preventDefault();
