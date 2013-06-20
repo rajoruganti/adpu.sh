@@ -1,7 +1,7 @@
 {
-  "name": "OpenShift-Sample-App",
+  "name": "promoApp",
   "version": "1.0.0",
-  "description": "OpenShift Sample Application",
+  "description": "Promo App",
   "keywords": [
     "OpenShift",
     "Node.js",
@@ -9,18 +9,18 @@
     "openshift"
   ],
   "author": {
-    "name": "OpenShift",
-    "email": "ramr@example.org",
+    "name": "Raj Oruganti",
+    "email": "raj@oruganti.org",
     "url":  "http://openshift.redhat.com/"
   },
-  "homepage": "http://openshift.redhat.com/",
+  "homepage": "http://promo.toyroute.com/",
   "repository": {
     "type": "git",
     "url": "https://gitub.com/openshift/crankcase"
   },
 
   "engines": {
-    "node": ">= 0.6.0",
+    "node": ">= 0.9.0",
     "npm": ">= 1.0.0"
   },
 
