@@ -1,8 +1,19 @@
 var async = require('async');
 var mongo = require('mongodb');
 var path = require('path');
+var util = require('util');
 
 var OAuth= require('oauth').OAuth;
+var nodemailer = require("nodemailer");
+
+// create reusable transport method (opens pool of SMTP connections)
+var smtpTransport = nodemailer.createTransport("SMTP",{
+    service: "Gmail",
+    auth: {
+        user: "raj@oruganti.org",
+        pass: "godZil!a"
+    }
+});
 
 var twCallbackUrl = process.env.TWITTER_CALLBACK_URL || "http://pro.mo:8080";
 
@@ -88,6 +99,337 @@ function getClientAddress(req){
             || connection.remoteAddress;
 }
 
+exports.home = function(req,res){
+	var tplPath = path.join(__dirname, '../public/tpl/');
+    var template  = require('swig');
+	template.init({
+	  allowErrors: false,
+	  autoescape: true,
+	  cache: true,
+	  encoding: 'utf8',
+	  filters: {},
+	  root: "public/tpl",
+	  tags: {},
+	  extensions: {},
+	  tzOffset: 0
+	});
+	var user = "";
+	if(req.user){
+		//logged in
+		console.log("logged in");
+		user = req.user.username;
+	}
+	var authErr = req.flash('error');
+	console.log("err:"+authErr);
+	var tmpl = template.compileFile(tplPath+'index.html');
+	renderedHTML= tmpl.render({
+	   user:user,
+		message: authErr
+	});
+	res.send(renderedHTML);
+};
+
+exports.register = function(req,res){
+	req.setEncoding("utf8");
+	var ip = getClientAddress(req);
+	var token = req.params.id;
+	var username;
+	async.series([
+		// fetch user corresponding to hash from mongo
+		function(callback){
+			console.log('Retrieving user: ' + token);
+
+		    db.collection('users', function(err, collection) {
+		        collection.findOne({'token':token}, function(err, item) {
+				if(err){
+					console.log("err");
+					res.send("You're not supposed to be here");
+				}
+				console.log(item);
+				username=item.username;
+				//console.log(message)
+				callback();
+				});
+			});
+		}
+	],function(err,result){
+		var tplPath = path.join(__dirname, '../public/tpl/');
+	    var template  = require('swig');
+		template.init({
+		  allowErrors: false,
+		  autoescape: true,
+		  cache: true,
+		  encoding: 'utf8',
+		  filters: {},
+		  root: "public/tpl",
+		  tags: {},
+		  extensions: {},
+		  tzOffset: 0
+		});
+
+		var tmpl = template.compileFile(tplPath+'register.html');
+
+		//var authErr = req.flash('error');
+		//console.log("err:"+authErr);
+		renderedHTML= tmpl.render({
+		    username:username
+		});
+
+		res.send(renderedHTML);
+	});
+	
+};
+
+exports.doRegister = function(req,res){
+	req.setEncoding("utf8");
+	var ip = getClientAddress(req);
+	var username = req.body.username;
+	var password = req.body.password;
+	console.log("registering:"+username);
+	//insert
+	var now = new Date();
+	var jsonDate = now.toJSON();
+	var xset = [{
+		"ip":ip,
+		"username":username,
+		//"timestamp":jsonDate,
+		"password":password
+	}];
+	console.log(xset);
+	db.collection('users', function(err, collection) {
+		collection.update({"username":username}, {$set:{password:password}},{safe:true,upsert:true}, function(err, result) {
+			if(err){
+				console.log("error saving user to mongo");
+				res.redirect("/");
+			}
+			else{
+				res.redirect("/dashboard");
+			}
+		});
+	});
+	
+};
+
+exports.account =function(req,res){
+	res.send('Hello ' + req.user.username);
+    
+};
+  
+exports.profile = function(req,res){
+	var tplPath = path.join(__dirname, '../public/tpl/');
+    var template  = require('swig');
+	template.init({
+	  allowErrors: false,
+	  autoescape: true,
+	  cache: true,
+	  encoding: 'utf8',
+	  filters: {},
+	  root: "public/tpl",
+	  tags: {},
+	  extensions: {},
+	  tzOffset: 0
+	});
+	var user = "";
+	if(req.user){
+		//logged in
+		console.log("logged in");
+		user = req.user.username;
+	}
+	var authErr = req.flash('error');
+	console.log("err:"+authErr);
+	var tmpl = template.compileFile(tplPath+'profile.html');
+	renderedHTML= tmpl.render({
+	   user:user,
+		message: authErr
+	});
+	res.send(renderedHTML);
+};
+exports.dashboard = function(req,res){
+	var tplPath = path.join(__dirname, '../public/tpl/');
+    var template  = require('swig');
+	template.init({
+	  allowErrors: false,
+	  autoescape: true,
+	  cache: true,
+	  encoding: 'utf8',
+	  filters: {},
+	  root: "public/tpl",
+	  tags: {},
+	  extensions: {},
+	  tzOffset: 0
+	});
+	var user = "";
+	if(req.user){
+		//logged in
+		console.log("logged in");
+		user = req.user.username;
+	}
+	var tmpl = template.compileFile(tplPath+'dashboard.html');
+	renderedHTML= tmpl.render({
+		user:user,
+		//infects:JSON.stringify(infects)
+	});
+	res.send(renderedHTML);
+};
+exports.campaigns = function(req,res){
+	var user = "";
+	if(req.user){
+		//logged in
+		console.log("logged in");
+		user = req.user.username;
+	}
+	
+	var userId,
+		promos = [],
+		infects=[];
+	// get all campaigns by user
+	async.series([
+		// find the user
+		function(callback){
+			console.log('Retrieving user: ' + user);
+			db.collection('users', function(err, collection) {
+		        collection.findOne({'username':user}, function(err, item) {
+				if(err){
+					console.log("err");
+					callback();
+				}
+				userId = item._id;
+				//console.log(message)
+				callback();
+
+				});
+			});
+		},
+		// find promos mamtching userId
+		function(callback){
+			db.collection('promo', function(err, collection) {
+		        collection.find({'user':userId}).toArray(function(err, items) {
+					if(err){
+						console.log("couldn't get promos for user:"+userId);
+						callback();
+					}
+		            //promos= JSON.stringify(items);
+					items.forEach(function(item){
+						promos.push(item);
+					});
+					//promos = items;
+					console.log("got promos for user:"+promos);
+		
+					callback();
+		        });
+		    });
+		},
+		
+	],function(err, result){
+		//console.log("user:"+userId);
+		//console.log("promos:"+promos);
+		//console.log("infects:"+infects);
+		res.send(JSON.stringify(promos));
+	});
+    
+	
+};
+
+exports.getInfects = function(req,res){
+	var user = "";
+	if(req.user){
+		//logged in
+		console.log("logged in");
+		user = req.user.username;
+	}
+	var id = req.params.id;
+	var BSON = mongo.BSONPure;
+	var promo = new BSON.ObjectID(id);
+	var userId,
+		promos = [],
+		infects=[];
+	// get all campaigns by user
+	async.series([
+		// find infects on promo
+		function(callback){
+				console.log("Getting infects for promo:"+promo);
+				// fetch the infects
+				db.collection('infects', function(err, collection) {
+			        collection.find({'campaign':promo}).toArray(function(err, items) {
+						if(err){
+							console.log("couldn't get infects for promo:"+promo);
+							callback();
+						}
+							console.log("items:"+items);
+						items.forEach(function(item){
+							infects.push(item); 
+							console.log(item);
+						});
+			            //infects= JSON.stringify(items);
+						
+						callback();
+			        });
+			    });
+	    	}
+		
+	],function(err, result){
+		res.send(JSON.stringify(infects));
+	});
+};
+exports.updateCampaign = function(req,res){
+	var id = req.body.pk;
+	var campaign = req.body.value;
+	var fieldName = req.body.name;
+	var BSON = mongo.BSONPure;
+	var o_id = new BSON.ObjectID(id);
+	console.log("updating campaign:"+id+" - name:"+campaign+" - field:"+fieldName);
+	db.collection('promo', function(err, collection) {
+    	collection.update({'_id':o_id}, {$set:{campaign:campaign}},{safe:true}, function(err, result) {
+            if (err) {
+                console.log('Error updating doc: ' + err);
+                res.send({xtext:'An error has occurred while updating campaign name to db'});
+				//callback();
+            } else {
+                console.log('' + result + ' document(s) updated');
+				console.log("updated promo:"+id)
+				res.send({status:"ok"});
+            }
+        });	
+	});
+};
+exports.login=function(req, res) {
+	var tplPath = path.join(__dirname, '../public/tpl/');
+    var template  = require('swig');
+	template.init({
+	  allowErrors: false,
+	  autoescape: true,
+	  cache: true,
+	  encoding: 'utf8',
+	  filters: {},
+	  root: "public/tpl",
+	  tags: {},
+	  extensions: {},
+	  tzOffset: 0
+	});
+	
+	var tmpl = template.compileFile(tplPath+'login.html');
+	var user = "";
+	if(req.user){
+		//logged in
+		console.log("logged in");
+		user = req.user.username;
+	}
+	var authErr = req.flash('error');
+	console.log("err:"+authErr);
+	renderedHTML= tmpl.render({
+	    message: authErr,
+		user:user,
+	});
+
+	res.send(renderedHTML);
+    
+  };
+  
+exports.logout=function(req, res) {
+    req.logout();
+    res.redirect('/');
+  };
+
 
 exports.fb= function(req, res){
 	req.setEncoding("utf8");
@@ -108,6 +450,7 @@ exports.tw = function(req, res){
 			req.session.rip = ip;
 			req.session.cid = req.params.id;
 			req.session.oauth = {token: oauth_token};
+			req.session.tweeter = {};
 			req.session.oauth.token = oauth_token;
 			console.log('oauth.token: ' + req.session.oauth.token);
 			req.session.oauth.token_secret = oauth_token_secret;
@@ -123,9 +466,13 @@ exports.twCallback = function(req, res, next){
 	if (req.session.oauth) {
 		req.session.oauth.verifier = req.query.oauth_verifier;
 		var oauth = req.session.oauth;
+		var tweeter = req.session.tweeter;
 		var cid = req.session.cid;
 		var message,
-			reward;
+			reward,
+			campaign
+			;
+		var infectId;
 		async.series([
 			// get access token from tw
 			function(callback){
@@ -137,7 +484,10 @@ exports.twCallback = function(req, res, next){
 						} else {
 							req.session.oauth.access_token = oauth_access_token;
 							req.session.oauth.access_token_secret = oauth_access_token_secret;
-							console.log(results);
+							console.log(results, req.session.oauth);
+							req.session.tweeter.user_id = results.user_id;
+							req.session.tweeter.screen_name = results.screen_name;
+							// store the twitter handle for saving later
 							callback();
 						}
 			
@@ -154,6 +504,7 @@ exports.twCallback = function(req, res, next){
 						if(err){
 							console.log("err");
 						}
+						campaign = item._id;
 						message = item.message;
 						reward = item.reward;
 						//console.log(message)
@@ -182,7 +533,10 @@ exports.twCallback = function(req, res, next){
 						res.send("failed");
 					}
 					else{
-						console.log("success posting to twitter");
+						// get the tweet id - used for tracking its presence later
+						req.session.tweeter.tweet = reply;
+						console.log(util.inspect(reply, false, null, true));
+	//					console.log("success posting to twitter:"+reply);
 						callback();
 					}
 				});
@@ -198,9 +552,11 @@ exports.twCallback = function(req, res, next){
 				var jsonDate = now.toJSON();
 				var xset = [{
 					"ip":req.session.rip,
-					"campaign":req.session.cid,
+					"campaign":campaign,
 					"timestamp":jsonDate,
-					"network":"tw"
+					"network":"tw",
+					"handle":req.session.tweeter.screen_name,
+					"user_id":req.session.tweeter.user_id
 				}];
 				console.log(xset);
 				db.collection('infects', function(err, collection) {
@@ -210,8 +566,29 @@ exports.twCallback = function(req, res, next){
 						}
 						else{
 							console.log("saved request to db:"+result[0]._id);
-							requestId = result[0]._id;
-							console.log("got _id:"+requestId);
+							infectId = result[0]._id;
+							console.log("got infectId:"+infectId);
+							callback();
+							
+						}
+					});
+				});
+			},
+			function(callback){
+				// save the tweet response
+				var xset = [{
+					"infect":infectId,
+					"tweet":req.session.tweeter.tweet
+				}];
+				db.collection('tweets', function(err, collection) {
+					collection.insert(xset, {safe:true}, function(err, result) {
+						if(err){
+							console.log("error saving to mongo")
+						}
+						else{
+							console.log("saved request to db:"+result[0]._id);
+							tweetId = result[0]._id;
+							console.log("got tweetId:"+tweetId);
 							callback();
 							
 						}
@@ -234,6 +611,8 @@ exports.doPromo = function(req,res){
 	
 	req.setEncoding("utf8");
 	var ip = getClientAddress(req);
+	var referrer = req.headers.referer;
+	req.session.referrer = referrer;
 	// show content and random button
 	// fetch content corresponding to hash from mongo
 	var id = req.params.id;
@@ -242,7 +621,8 @@ exports.doPromo = function(req,res){
     db.collection('promo', function(err, collection) {
         collection.findOne({'plink':id}, function(err, item) {
 		if(err){
-			console.log("err");
+			console.log(err);
+			res.send("error fetching promo");
 		}
 			if (item.fb == true){
 				sites.push("fb");
@@ -260,7 +640,7 @@ exports.doPromo = function(req,res){
 			  cache: true,
 			  encoding: 'utf8',
 			  filters: {},
-			  root: "",
+			  root: "public/tpl",
 			  tags: {},
 			  extensions: {},
 			  tzOffset: 0
@@ -270,7 +650,8 @@ exports.doPromo = function(req,res){
 			renderedHTML= tmpl.render({
 			    message: item.message,
 				site: site,
-				id:id
+				id:id,
+				referrer:referrer
 			});
 			res.send(renderedHTML);
 		});
@@ -281,14 +662,19 @@ exports.createPromo = function(req,res){
 		req.setEncoding("utf8");
 		var ip = getClientAddress(req);
 		console.log(req.body);
-		var requestId;
-		var message,
+		var requestId, userId;
+		var campaign,
+			message,
 			reward,
 			sitenum=0,
 			fb = false,
 			tw = false,
 			sites = [],
-			hash;
+			hash,
+			promoUrl,
+			newUser=false,
+			token
+			;
 		req.body.forEach(function(item, index) {
 			// `item` is the next item in the array
 			// `index` is the numeric position in the array, e.g. `array[index] == item`
@@ -302,6 +688,9 @@ exports.createPromo = function(req,res){
 			}
 			else if (item.name == "email"){
 				email = item.value;
+			}
+			else if (item.name=="campaign"){
+				campaign = item.value;
 			}
 			else if (item.name=="sites"){
 				console.log("index:"+index+"-"+item.value);
@@ -319,11 +708,59 @@ exports.createPromo = function(req,res){
 		console.log(message);
 		console.log(reward);
 		console.log("fb:"+fb);
-		console.log("tw:"+tw)
+		console.log("tw:"+tw);
+		console.log("campaign"+campaign);
 
 		
 		async.series([
+			function(callback){
+				//create a user record for future registration - if not already exists
+				// find the user
+				db.collection("users", function(err, collection) {
+					collection.findOne({username: email}, {}, function(err, user) {
+						if(err){callback();}
+						if(user){
+							userId = user._id;
+							callback();
+						}
+						if (!user) {
+							newUser = true; 
+							// generate a token
+							require('crypto').randomBytes(24, function(ex, buf) {
+								token = buf.toString('hex');
+								console.log("token:"+token);
+								//insert
+								var now = new Date();
+								var jsonDate = now.toJSON();
+								var xset = [{
+									"ip":ip,
+									"username":email,
+									"timestamp":jsonDate,
+									"token":token
+								}];
+								console.log(xset);
+								db.collection('users', function(err, collection) {
+									collection.insert(xset, {safe:true, upsert:true}, function(err, result) {
+										if(err){
+											console.log("error saving user to mongo")
+										}
+										else{
+											console.log("saved request to db:"+result[0]._id);
+											userId = result[0]._id;
+											console.log("got userId:"+userId);
+											callback();
+
+										}
+									});
+								});
+							});
+						
+						} 
+						
+					});
+				});
 			
+			},
 			//save the request to mongo
 			function(callback){
 				
@@ -334,7 +771,8 @@ exports.createPromo = function(req,res){
 					"reward":reward,
 					"fb":fb,
 					"tw":tw,
-					"email":email,
+					"user":userId,
+					"campaign":campaign
 				
 				}];
 				console.log(xset);
@@ -352,50 +790,60 @@ exports.createPromo = function(req,res){
 						}
 					});
 				});
+				
 			},
 			function(callback){
-				// generate a unique code
-				
+				// generate a unique code and update the doc in mongo
 				hash = require('crypto').createHash('md5').update(message+reward).digest("hex");
+				promoUrl = "http://"+req.headers.host+"/do/"+hash;
 				console.log("hash:"+hash);
-				var xset = [
-					{'_id':requestId},
-					{ip:ip,
-					message:message,
-					reward:reward,
-					fb:fb,
-					tw:tw,
-					email:email,
-					plink:hash}
-				
-				];
-				console.log(xset);
-				
 				db.collection('promo', function(err, collection) {
-		        	collection.update({'_id':requestId}, 	{ip:ip,
-						message:message,
-						reward:reward,
-						fb:fb,
-						tw:tw,
-						email:email,
-						plink:hash},{safe:true}, function(err, result) {
+		        	collection.update({'_id':requestId}, {$set:{plink:hash}},{safe:true, upsert:true}, function(err, result) {
 			            if (err) {
 			                console.log('Error updating doc: ' + err);
-			                res.send({xtext:'An error has occurred while updating to db'});
+			                res.send({xtext:'An error has occurred while updating plink to db'});
 							callback();
 			            } else {
 			                console.log('' + result + ' document(s) updated');
-							console.log("saved:"+" into: "+requestId)
+							console.log("saved plink:"+requestId)
 							callback();
-
 			            }
-			        });
-					
+			        });	
 		    	});
+			},
+			//mail the user
+			function(callback){
+				mailBody = "<p>Your campaign has been created and your Promo link is:"+promoUrl+"<br/></p>";
+				if (newUser=true){
+					mailBody+="Go ahead and claim your account by clicking"+"<a href=\"http://pro.mo:8080/register/"+token+"\">here</a>";
+				}
+				// setup e-mail data with unicode symbols
+				var mailOptions = {
+				    from: "PRMOT ✔ <raj@oruganti.org>", // sender address
+				    to: email, // list of receivers
+				    subject: "Hello ✔", // Subject line
+				    text: "PRMOT Campaign created ✔", // plaintext body
+				    html: mailBody // html body
+				}
+
+				// send mail with defined transport object
+				smtpTransport.sendMail(mailOptions, function(error, response){
+				    if(error){
+				        console.log(error);
+				    }else{
+				        console.log("Message sent: " + response.message);
+				    }
+
+				    // if you don't want to use this transport object anymore, uncomment following line
+				    //smtpTransport.close(); // shut down the connection pool, no more messages
+				});
+				callback();
+				
 			}
-		
 		],function(err,result){
 			//console.log("result:"+result);
-			res.send({plink:"/do/"+hash});
+			// construct the full url
+			
+			res.send({plink:promoUrl});
 		});
 	};

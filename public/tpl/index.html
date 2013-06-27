@@ -1,0 +1,113 @@
+{% extends 'layout.html' %}
+	{% block content %}
+			<div id="promoForm" class="offset3 span6">
+				<form id="qform" method="post" class="form-search form-horizontal">
+						<fieldset>
+
+						<!-- Form Name -->
+						<legend>Create a promo</legend>
+
+						<!-- Textarea -->
+						<div class="control-group">
+						  <label class="control-label">What message do you want to promote?</label>
+						  <div class="controls">                     
+							<textarea id="message" name="message" maxlength="140" rows="2" placeholder="Try to stick to 140 chars" required=""></textarea>
+						  </div>
+						</div>
+
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Reward URL</label>
+						  <div class="controls">
+						    <input id="reward" name="reward" type="text" placeholder="http://google.com" class="input-xlarge" required="">
+						    <p class="help-block">What will your site visitors get in return for posting your message on Social Media networks</p>
+						  </div>
+						</div>
+
+						<!-- Multiple Checkboxes -->
+						<div class="control-group">
+						  <label class="control-label">Where do you want to promote your message?</label>
+						  <div class="controls">
+						    <label class="checkbox">
+						      <input type="checkbox" name="sites" value="twitter">
+						      Twitter
+						    </label>
+						    <label class="checkbox">
+						      <input type="checkbox" name="sites" value="facebook">
+						      Facebook
+						    </label>
+						  </div>
+						</div>
+						
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Email</label>
+						  <div class="controls">
+							{% if (user) %}
+							<input type="hidden" name="email" value="{{user}}"/>
+							{% endif %}
+						    <input id="email" name="email" type="text" class="input-xlarge" required="" 
+								{% if (user) %}
+									value="{{user}}" readonly="true"
+								{%else%}
+									placeholder="doc@example.com" 
+								{%endif%}
+							>
+						    <p class="help-block">Track your campaigns</p>
+						  </div>
+						</div>
+						
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Campaign Name</label>
+						  <div class="controls">
+						    <input id="campaign" name="campaign" type="text" placeholder="The promotion" class="input-xlarge">
+						    <p class="help-block">Give your campaign a friendly name so you can track it easily later</p>
+						  </div>
+						</div>
+						<!-- Text input-->
+						<div class="control-group">
+						  <label class="control-label">Status update URL</label>
+						  <div class="controls">
+							
+						    <input id="statusUrl" name="statusUrl" type="text" placeholder="" class="input-xlarge">
+						    <p class="help-block">Where do you want to receive updates about the post (Is it still there?) [We will monitor this for a period of 10 days from the date of the posting - <a href="">Look Here</a> For the API format]</p>
+						  </div>
+						</div>
+
+						</fieldset>
+					<button type="submit" class="btn">Generate pro.mo link</button>
+				</form>
+			
+				
+				</div>
+				
+				
+			</div>
+			<!-- ko stopBinding: true -->
+			
+				<div class="row-fluid">
+					<div class="span6 offset3">
+						<div id="results">
+							<div>
+								<div data-bind="template: { foreach: plinks }">
+									<div id="column1-wrap" >
+										 your pro.mo URL is: 
+										<a data-bind="attr: { href: plink}">
+										   <span data-bind="{'text':plink}"></span>
+										</a>
+										<button class="btn" id="showPromoForm">Create another one</button>
+
+									</div>
+									<div id="clear"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- /ko -->
+	{% endblock %}
+	{% block footer %}
+		
+	{% endblock %}
+	

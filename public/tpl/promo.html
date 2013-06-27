@@ -1,13 +1,17 @@
-Welcome to pro.mo!
-ii
-You have chosen to promote the following message on {{site}} to gain access to a resource on {{referrer}}
-<h1>{{ message }}</h1>
+{% extends 'layout.html' %}
+	{% block content %}
+			Welcome to promo!
+			You have chosen to promote the following message on {{site}} to gain access to a resource on {{referrer}}
+			<h1>{{ message }}</h1>
+			<div class="row">
+			   
+					<a href="/{{site}}/{{id}}">
+						<img src="../css/img/{{site}}.png"/></a>
+					
+			</div>
+		
 
-<a href="/{{site}}/{{id}}">
-	{% if site == "tw" %}
-	Tweet
-	{% else %}
-	Post to facebook
-	{% endif %}
-</a>
-
+			</a>
+			
+{% endblock %}
+		
