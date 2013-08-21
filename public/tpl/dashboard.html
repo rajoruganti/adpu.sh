@@ -164,7 +164,7 @@
 			$.getJSON(
 			        '/infects/'+promo,
 			        function (infects) {
-			            //self.infects.removeAll();
+			            self.infects.removeAll();
 			            $.each(infects, function (index, item) {
 							//console.log(item);
 			                self.infects.push(new infect(item));

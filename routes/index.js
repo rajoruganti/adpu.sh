@@ -598,6 +598,7 @@ exports.twCallback = function(req, res, next){
 			// redirect the user
 		],function(err,result){
 				//console.log("result:"+result);
+				// send back a result json that the client can use to process access
 				res.redirect(reward);
 			});
 		
@@ -619,11 +620,29 @@ exports.doPromo = function(req,res){
 	var sites = [];
     console.log('Retrieving promo: ' + id);
     db.collection('promo', function(err, collection) {
-        collection.findOne({'plink':id}, function(err, item) {
+		collection.find().sort({timestamp:-1}).limit(1, function(){
+			
+		//});
+        //collection.findOne({'plink':id}, function(err, item) {
 		if(err){
 			console.log(err);
 			res.send("error fetching promo");
 		}
+		var tplPath = path.join(__dirname, '../public/tpl/');
+        var template  = require('swig');
+		template.init({
+		  allowErrors: false,
+		  autoescape: true,
+		  cache: true,
+		  encoding: 'utf8',
+		  filters: {},
+		  root: "public/tpl",
+		  tags: {},
+		  extensions: {},
+		  tzOffset: 0
+		});
+		var tmpl = template.compileFile(tplPath+'promo.html');
+		if(item){
 			if (item.fb == true){
 				sites.push("fb");
 			}
@@ -631,22 +650,16 @@ exports.doPromo = function(req,res){
 				sites.push("tw");
 			}
 			var site = sites[Math.floor(Math.random() * sites.length)];
-			console.log(sites)
-			var tplPath = path.join(__dirname, '../public/tpl/');
-            var template  = require('swig');
-			template.init({
-			  allowErrors: false,
-			  autoescape: true,
-			  cache: true,
-			  encoding: 'utf8',
-			  filters: {},
-			  root: "public/tpl",
-			  tags: {},
-			  extensions: {},
-			  tzOffset: 0
-			});
+			//console.log(sites)
+			if(site == "tw"){
+				site = "Twitter";
+			}
+			else if(site == "fb"){
+				site = "Facebook"
+			}
 			
-			var tmpl = template.compileFile(tplPath+'promo.html');
+
+			
 			renderedHTML= tmpl.render({
 			    message: item.message,
 				site: site,
@@ -654,6 +667,14 @@ exports.doPromo = function(req,res){
 				referrer:referrer
 			});
 			res.send(renderedHTML);
+		}
+		else{
+			renderedHTML= tmpl.render({
+			    error: "No such ad to pu.sh",
+			});
+			res.send(renderedHTML);
+		}
+			
 		});
     });
 };
@@ -663,7 +684,9 @@ exports.createPromo = function(req,res){
 		var ip = getClientAddress(req);
 		console.log(req.body);
 		var requestId, userId;
-		var campaign,
+		var host = req.headers.host;
+		var email,
+			campaign,
 			message,
 			reward,
 			sitenum=0,
@@ -680,11 +703,9 @@ exports.createPromo = function(req,res){
 			// `index` is the numeric position in the array, e.g. `array[index] == item`
 			if (item.name=="message"){
 				message = item.value;
-
 			}
 			else if (item.name=="reward"){
 				reward = item.value;
-				
 			}
 			else if (item.name == "email"){
 				email = item.value;
@@ -705,6 +726,7 @@ exports.createPromo = function(req,res){
 				sitenum++;
 			}
 		});
+		console.log(email);
 		console.log(message);
 		console.log(reward);
 		console.log("fb:"+fb);
@@ -718,9 +740,13 @@ exports.createPromo = function(req,res){
 				// find the user
 				db.collection("users", function(err, collection) {
 					collection.findOne({username: email}, {}, function(err, user) {
-						if(err){callback();}
+						if(err){
+							console.log(err);
+							callback();
+						}
 						if(user){
 							userId = user._id;
+							console.log("user exists");
 							callback();
 						}
 						if (!user) {
@@ -813,9 +839,14 @@ exports.createPromo = function(req,res){
 			},
 			//mail the user
 			function(callback){
+				//console.log(process.env);
+				console.log("host:"+host);
 				mailBody = "<p>Your campaign has been created and your Promo link is:"+promoUrl+"<br/></p>";
-				if (newUser=true){
+				if (newUser==true){
 					mailBody+="Go ahead and claim your account by clicking"+"<a href=\"http://pro.mo:8080/register/"+token+"\">here</a>";
+				}
+				else{
+					mailBody+="Go ahead and "+"<a href=\"http://"+host+"\">login</a>";
 				}
 				// setup e-mail data with unicode symbols
 				var mailOptions = {

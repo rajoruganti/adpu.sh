@@ -43,7 +43,7 @@
 			                <span class="icon-bar"></span>
 			                <span class="icon-bar"></span>
 			            </a>
-			            <a class="brand" href="/">infex</a>
+			            <a class="brand" href="/">adpu.sh</a>
 						
 
 			            <div class="nav-collapse collapse">
@@ -110,17 +110,32 @@
 			    <h3 id="myModalLabel">How it works</h3>
 			  </div>
 			  <div class="modal-body">
-			    <p>
-			    	<ul>
-			    		<li>
-			    			Generate a promotion link
-			    		</li>
-						Use the link on your web properties
-						reward your visitors
-						track submissions and updates
 
-			    	</ul>
-			    </p>
+				
+			    	
+					
+
+					<dl class="dl-horizontal">
+					<dt class="label">You</dt>
+					<dd class="checked">Want to promote some content on your blog</dd>
+					
+					<dd>Create an adpu.sh link</dd>
+					
+					<dd>hide your blog content behind the adpu.sh link (prevent direct access to the content)</dd>
+					<dd>invite one friend to view your blog content</dd>
+					<dt class="label label-inverse">Your friend</dt>
+					<dd>is redirected to adpu.sh </dd>
+					<dd>posts your promotional message on a SM network</dd>
+					<dd>is redirected back to the redirect URL you provided</dd>
+					<dd>Gets access to the blog content</dd>
+					<dt class="label label-warning">Your friend's friends</dt>
+					<dd>see the post on the SM site</dd>
+					<dd>visit your blog to view the content</dd>
+					<dt class="label label-success">The world</dt>
+					<dd>Makes you famous</dd>
+					</dl>
+				
+			    
 			  </div>
 			  <div class="modal-footer">
 			    <button class="btn" data-dismiss="modal" aria-hidden="true">OK. Got it.</button>
@@ -143,7 +158,7 @@
 	
 	{% endblock %} <!-- end header-->
 	
-		<div class="container-fluid home-hero">
+		<div class="container-fluid ">
 			<p id="out"></p>
 		          
 		    <div>
@@ -174,8 +189,8 @@
 			  });
 			$("#showPromoForm").live('click', function () {
 				$('#qform')[0].reset();
-				$("#promoForm").show('slow');
-				$("#results").hide('slow');
+				$("#plink").modal('hide');
+
 			});
 			//sign-in form
 			// Setup drop down menu
@@ -261,7 +276,6 @@
 						
 					},
 		            success: function (data) {
-						console.log(data.xtext);
 						$("#results").show('slow');
 						$("#promoForm").hide('slow');
 						$.unblockUI();
@@ -271,6 +285,16 @@
 						//var parsed = JSON.parse(data);
 						//var parsed = jQuery.parseJSON(data);
 						PlinkviewModel.plinks(data)
+						$('#plink').modal('show'); 
+						$('#plink').on('show', function () {
+						    $("#plink-copy").delay(250).queue(function(next){
+						        $(this).zclip({
+						            path: "lib/ZeroClipboard.swf",
+						            copy: "copied text OK!"
+						        });
+						        next();
+						    });
+						});
 						//$("#column2").innerHTML = data.xtext;
 		            }
 		        });

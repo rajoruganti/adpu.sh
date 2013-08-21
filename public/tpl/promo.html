@@ -1,17 +1,44 @@
 {% extends 'layout.html' %}
-	{% block content %}
-			Welcome to promo!
-			You have chosen to promote the following message on {{site}} to gain access to a resource on {{referrer}}
-			<h1>{{ message }}</h1>
-			<div class="row">
-			   
-					<a href="/{{site}}/{{id}}">
-						<img src="../css/img/{{site}}.png"/></a>
-					
-			</div>
-		
+	{% block content %}			
+			
+			     <div class="container-fluid">
+					<div class="row-fluid">
+						<div class="span12 text-center">
+							<h2>
+								Welcome to adpu.sh
+							</h2>
+							{% if (error) %}
+							<p>
+								{{error}}
+							</p>
+							{% else%}
+							<p>
+								You have chosen to promote the following message on <span class="label label-info">{{site}}</span> to gain access to a resource on <span class="label label-success">{{referrer}}</span>
+							
+												<p>
+													"{{ message }}"
+												</p> 
+										
+								<h3></h3>
+								<div class="row">
 
-			</a>
+									
+
+								</div>
+
+
+								</a>
+							</p>
+							<p>
+							
+							
+									<a class="btn" href="/{{site}}/{{id}}">
+										<img src="../css/img/{{site}}.png"/></a>
+							</p>
+							{% endif %}
+						</div>
+					</div>
+				</div>
 			
 {% endblock %}
 		

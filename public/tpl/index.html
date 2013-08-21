@@ -1,11 +1,16 @@
 {% extends 'layout.html' %}
+{% block extrahead%}
+<link href="css/bootstrap-checkbox.css" rel="stylesheet">
+{% endblock %}
 	{% block content %}
-			<div id="promoForm" class="offset3 span6">
-				<form id="qform" method="post" class="form-search form-horizontal">
+		<div class="container">
+			<div class="row-fluid">
+			<div id="promoForm" class="offset4 span2">
+				<form id="qform" method="post" class="form-horizontal">
 						<fieldset>
 
 						<!-- Form Name -->
-						<legend>Create a promo</legend>
+						<legend>Create an ad to pu.sh</legend>
 
 						<!-- Textarea -->
 						<div class="control-group">
@@ -14,13 +19,34 @@
 							<textarea id="message" name="message" maxlength="140" rows="2" placeholder="Try to stick to 140 chars" required=""></textarea>
 						  </div>
 						</div>
-
-						<!-- Text input-->
+						<!-- radio-->
 						<div class="control-group">
-						  <label class="control-label">Reward URL</label>
+						  <label class="control-label">Reward Type</label>
+						  <div class="controls">
+							<input type="hidden" id="rewardType" name="rewardType" value="" />
+							<div class="btn-group rewardType" data-toggle="buttons-radio">
+							  <button type="button" class="btn btn-primary" data-toggle="button">URL</button>
+							  <button type="button" class="btn btn-primary">Custom</button>
+
+							</div>
+						    <p class="help-block">URL reward: User will be redirected to the reward URL upon successful posting<br/>Custom reward: Callback will be sent to </p>
+						  </div>
+						</div>
+						
+						<!-- Text input-->
+						<div class="control-group rewardUrl">
+						  <label class="control-label">Reward</label>
 						  <div class="controls">
 						    <input id="reward" name="reward" type="text" placeholder="http://google.com" class="input-xlarge" required="">
 						    <p class="help-block">What will your site visitors get in return for posting your message on Social Media networks</p>
+						  </div>
+						</div>
+						<!-- Text input-->
+						<div class="control-group rewardCustom">
+						  <label class="control-label">Callback</label>
+						  <div class="controls">
+						    <input id="reward" name="reward" type="text" placeholder="http://yoursite.com/adpush/callback" class="input-xlarge" required="">
+						    <p class="help-block">Where should the posting status be sent? See <a href="#"> for response format</a></p>
 						  </div>
 						</div>
 
@@ -28,12 +54,12 @@
 						<div class="control-group">
 						  <label class="control-label">Where do you want to promote your message?</label>
 						  <div class="controls">
-						    <label class="checkbox">
-						      <input type="checkbox" name="sites" value="twitter">
+						    <label>
+						      <input type="checkbox" name="sites" value="twitter" class="checkbox" >
 						      Twitter
 						    </label>
-						    <label class="checkbox">
-						      <input type="checkbox" name="sites" value="facebook">
+						    <label>
+						      <input type="checkbox" name="sites" value="facebook" class="checkbox">
 						      Facebook
 						    </label>
 						  </div>
@@ -70,44 +96,78 @@
 						  <label class="control-label">Status update URL</label>
 						  <div class="controls">
 							
-						    <input id="statusUrl" name="statusUrl" type="text" placeholder="" class="input-xlarge">
-						    <p class="help-block">Where do you want to receive updates about the post (Is it still there?) [We will monitor this for a period of 10 days from the date of the posting - <a href="">Look Here</a> For the API format]</p>
+						    <input id="statusUrl" name="statusUrl" type="text" placeholder="Coming soon" class="input-xlarge">
+						    <p class="help-block">Where do you want to receive updates about the post (Is it still there?) <br/	>[We will monitor this for a period of 10 days from the date of the posting - <a href="">Look Here</a> For the API format]</p>
 						  </div>
 						</div>
 
 						</fieldset>
-					<button type="submit" class="btn">Generate pro.mo link</button>
+						<button type="submit" class="btn">Generate adpu.sh link</button>
+					
 				</form>
 			
 				
 				</div>
+				</div>
+				</div>
 				
 				
 			</div>
-			<!-- ko stopBinding: true -->
-			
-				<div class="row-fluid">
-					<div class="span6 offset3">
-						<div id="results">
-							<div>
-								<div data-bind="template: { foreach: plinks }">
-									<div id="column1-wrap" >
-										 your pro.mo URL is: 
-										<a data-bind="attr: { href: plink}">
-										   <span data-bind="{'text':plink}"></span>
-										</a>
-										<button class="btn" id="showPromoForm">Create another one</button>
-
+			<div id="plink" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="howItWorksLabel" aria-hidden="true">
+			  <div class="modal-header">
+			    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			    <h3 id="myModalLabel">Your adpu.sh link is ready</h3>
+			  </div>
+			  <div class="modal-body">
+			    <p>
+					
+			    	<div class="row-fluid">
+						<div>
+							<!-- ko stopBinding: true -->
+							
+							<div id="results">
+								<div>
+									<div data-bind="template: { foreach: plinks }">
+										<div id="column1-wrap" >
+											 Your adpu.sh URL is: 
+											<span data-bind="{'text':plink}"></span>
+											   <a href="#" data-bind="attr:{'data-copy':plink}" class="copy" id="plink-copy">Copy</a>
+											<button class="btn" id="showPromoForm">Create another one</button>
+											
+										</div>
+										<div id="clear"></div>
 									</div>
-									<div id="clear"></div>
 								</div>
 							</div>
+							<!-- /ko -->
+							
 						</div>
 					</div>
-				</div>
-				<!-- /ko -->
+					
+				</p>
+			  </div>
+
+			</div>
+		</div>
+				
 	{% endblock %}
 	{% block footer %}
-		
+		<script src="lib/bootstrap-checkbox.js"></script>
+				<script src="lib/jquery.zclip.min.js"></script>
+		<script type="text/javascript">
+			//$('.checkbox').checkbox();
+			$(function(){
+				$(".rewardCustom").hide();
+				
+				$(".rewardType .btn").click(function() {
+				    // whenever a button is clicked, set the hidden helper
+				    $("#rewardType").val($(this).text());
+				//	$(".rewardUrl").toggle();
+					$(".rewardCustom").toggle();
+				 
+				});
+
+
+		</script
 	{% endblock %}
 	
